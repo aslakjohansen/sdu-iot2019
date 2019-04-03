@@ -1,0 +1,64 @@
+#!/usr/bin/env python3
+
+from rdflib import Graph, Namespace
+import json
+
+def query (g, q):
+    rows = g.query(q)
+    return list(map(lambda row: list(row), rows))
+
+def prettyprint (structure):
+    pretty = json.dumps(structure, sort_keys=True, indent=4, separators=(',', ': '))
+    print(pretty)
+
+# load ontology + model
+g = Graph()
+g.bind('o', Namespace('http://cfei.mmmi.sdk.dk/~asjo/ontologies/iot2019/demo/ontology#'))
+g.parse('ontology.ttl', format='turtle')
+g.parse('model.ttl', format='turtle')
+
+# evaluate query against model
+print('Duct layout:')
+q = \
+'''
+SELECT ?duct ?parent
+WHERE {
+    ?duct   rdf:type/rdfs:subClassOf* o:Duct .
+    ?parent rdf:type/rdfs:subClassOf* o:Duct .
+    ?parent o:feeds ?duct .
+}
+'''
+prettyprint(query(g, q))
+
+# evaluate query against model
+print('Available sensors:')
+q = \
+'''
+SELECT ?sensor ?type ?duct
+WHERE {
+    ?sensor rdf:type/rdfs:subClassOf* o:Sensor .
+    ?sensor rdf:type ?type .
+    ?sensor o:at ?duct .
+}
+'''
+prettyprint(query(g, q))
+
+# evaluate query against model
+print('Sensors udstream of ID "id3":')
+q = \
+'''
+SELECT ?sensor ?type ?id
+WHERE {
+    ?sensor rdf:type/rdfs:subClassOf* o:Sensor .
+    ?sensor rdf:type ?type .
+    ?sensor o:hasID ?id .
+    ?sensor o:at ?duct .
+    
+    ?sink_sensor o:hasID "id3" .
+    ?sink_sensor o:at ?sink_duct .
+    
+    ?duct o:feeds+ ?sink_duct
+}
+'''
+prettyprint(query(g, q))
+

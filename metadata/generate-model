@@ -1,0 +1,97 @@
+#!/usr/bin/env python3
+
+from rdflib import Graph, Namespace, Literal
+
+'''
+The duct system we are modeling looks like this:
+
+      *
+      |
+      *-----t2
+     / \
+    /   \
+    *   *
+    |   |
+ t1-*   *---t1
+       / \
+      /   \
+ t2--*    *
+     |
+ t1--*
+
+Legend:
+ - t1: thermistor temperature sensor
+ - t2: thermocouple temperature sensor
+'''
+
+def generate_thermistor (identifier, calibration1, calibration2):
+    global counter
+    
+    # initialize duct
+    sensor = M['thermistors/%u' % counter]
+    counter += 1
+    g.add((sensor, RDF.type, O['Thermistor_Temperature_Sensor']))
+    
+    # attach values
+    g.add((sensor, O['hasID'], Literal(identifier)))
+    g.add((sensor, O['hasCalibrationA'], Literal(calibration1)))
+    g.add((sensor, O['hasCalibrationB'], Literal(calibration2)))
+    
+    return sensor
+
+def generate_thermocouple (identifier, calibration):
+    global counter
+    
+    # initialize duct
+    sensor = M['thermocouples/%u' % counter]
+    counter += 1
+    g.add((sensor, RDF.type, O['Thermocouple_Temperature_Sensor']))
+    
+    # attach values
+    g.add((sensor, O['hasID'], Literal(identifier)))
+    g.add((sensor, O['hasCalibration'], Literal(calibration)))
+    
+    return sensor
+
+def generate_duct (sensors, parent=None):
+    global counter
+    
+    # initialize duct
+    duct = M['ducts/%u' % counter]
+    counter += 1
+    g.add((duct, RDF.type, O['Duct']))
+    
+    # link to parent
+    if parent:
+        g.add((parent, O['feeds'], duct))
+    
+    # attach sensors
+    for sensor in sensors:
+        g.add((sensor, O['at'], duct))
+    
+    return duct
+
+counter = 0 # for ensuring unique names
+
+# initialize model
+g = Graph()
+
+# define namespaces
+O   = Namespace('http://cfei.mmmi.sdk.dk/~asjo/ontologies/iot2019/demo/ontology#')
+M   = Namespace('http://cfei.mmmi.sdk.dk/~asjo/ontologies/iot2019/demo/model#')
+RDF = Namespace('http://www.w3.org/1999/02/22-rdf-syntax-ns#')
+
+# generate ducts
+d1 = generate_duct([])
+d2 = generate_duct([generate_thermocouple('id1', '438')], d1)
+d3 = generate_duct([], d2)
+d4 = generate_duct([generate_thermistor('id2', '12', '37')], d3)
+d5 = generate_duct([], d2)
+d6 = generate_duct([generate_thermistor('id3', '13', '43')], d5)
+d7 = generate_duct([generate_thermocouple('id4', '516')], d6)
+d8 = generate_duct([generate_thermistor('id5', '9', '23')], d7)
+d9 = generate_duct([], d6)
+
+# store resulting triplestore to disk
+g.serialize('model.ttl', 'turtle')
+

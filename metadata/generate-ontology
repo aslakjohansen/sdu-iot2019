@@ -1,0 +1,73 @@
+#!/usr/bin/env python3
+
+from rdflib import Graph, Namespace
+
+'''
+This defines the following entities:
+- Duct
+- Thermistor_Temperature_Sensor
+- Thermocouple_Temperature_Sensor
+- feeds
+- at
+- hasID
+- hasCalibration
+- hasCalibrationA
+- hasCalibrationB
+'''
+
+# initialize model
+g = Graph()
+
+# define namespaces
+O    = Namespace('http://cfei.mmmi.sdk.dk/~asjo/ontologies/iot2019/demo/ontology#')
+RDF  = Namespace('http://www.w3.org/1999/02/22-rdf-syntax-ns#')
+RDFS = Namespace('http://www.w3.org/2000/01/rdf-schema#')
+XSD  = Namespace('http://www.w3.org/2001/XMLSchema-datatypes')
+
+# name classes
+Duct                            = O['Duct']
+Sensor                          = O['Sensor']
+Temperature_Sensor              = O['Temperature_Sensor']
+Thermistor_Temperature_Sensor   = O['Thermistor_Temperature_Sensor']
+Thermocouple_Temperature_Sensor = O['Thermocouple_Temperature_Sensor']
+
+# define classes
+g.add((Duct                           , RDFS['subClassOf'], RDFS['Class']))
+g.add((Sensor                         , RDFS['subClassOf'], RDFS['Class']))
+g.add((Temperature_Sensor             , RDFS['subClassOf'], Sensor))
+g.add((Thermistor_Temperature_Sensor  , RDFS['subClassOf'], Temperature_Sensor))
+g.add((Thermocouple_Temperature_Sensor, RDFS['subClassOf'], Temperature_Sensor))
+
+# name properties
+feeds           = O['feeds']
+at              = O['at']
+hasID           = O['hasID']
+hasCalibration  = O['hasCalibration']
+hasCalibrationA = O['hasCalibrationA']
+hasCalibrationB = O['hasCalibrationB']
+
+# define properties
+g.add((feeds          , RDFS['subPropertyOf'], RDF['Property']))
+g.add((at             , RDFS['subPropertyOf'], RDF['Property']))
+g.add((hasID          , RDFS['subPropertyOf'], RDF['Property']))
+g.add((hasCalibration , RDFS['subPropertyOf'], RDF['Property']))
+g.add((hasCalibrationA, RDFS['subPropertyOf'], RDF['Property']))
+g.add((hasCalibrationB, RDFS['subPropertyOf'], RDF['Property']))
+
+# restrictions on properties
+g.add((feeds, RDFS['domain'], O['Duct']))
+g.add((feeds, RDFS['range'] , O['Duct']))
+g.add((at, RDFS['domain'], O['Sensor']))
+g.add((at, RDFS['range'] , O['Duct']))
+g.add((hasID, RDFS['domain'], O['Sensor']))
+g.add((hasID, RDFS['range'] , XSD['string']))
+g.add((hasCalibration, RDFS['domain'], O['Thermocouple_Temperature_Sensor']))
+g.add((hasCalibration, RDFS['range'] , XSD['float']))
+g.add((hasCalibrationA, RDFS['domain'], O['Thermistor_Temperature_Sensor']))
+g.add((hasCalibrationA, RDFS['range'] , XSD['float']))
+g.add((hasCalibrationB, RDFS['domain'], O['Thermistor_Temperature_Sensor']))
+g.add((hasCalibrationB, RDFS['range'] , XSD['float']))
+
+# store resulting triplestore to disk
+g.serialize('ontology.ttl', 'turtle')
+
